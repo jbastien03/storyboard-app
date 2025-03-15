@@ -1,0 +1,143 @@
+"use client";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+const videos = [
+  { id: "video1", title: "Amazing Short Film", creator: "User123", works: ["video3", "video5"], thumbnail: "/thumbnails/video1.jpg" },
+  { id: "video2", title: "Nature’s Wonders", creator: "FilmmakerXYZ", works: ["video4", "video6"], thumbnail: "/thumbnails/video2.jpg" },
+  { id: "video3", title: "Indie Film Showcase", creator: "User123", works: ["video1", "video5"], thumbnail: "/thumbnails/video3.jpg" }
+];
+
+export default function VideoPage({ params }: { params: { videoId: string } }) {
+  const router = useRouter();
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(
+    videos.findIndex((v) => v.id === params.videoId)
+  );
+  const [showTitle, setShowTitle] = useState(true);
+  const [showCreator, setShowCreator] = useState(false);
+  const [likes, setLikes] = useState(0);
+  const [saved, setSaved] = useState(false);
+  const currentVideo = videos[currentVideoIndex];
+
+  useEffect(() => {
+    // Hide title after 10 seconds
+    const titleTimeout = setTimeout(() => setShowTitle(false), 10000);
+
+    // Show creator’s name at the end of the video
+    const creatorTimeout = setTimeout(() => setShowCreator(true), 5000);
+
+    // Show title again on user interaction
+    const handleInteraction = () => setShowTitle(true);
+
+    window.addEventListener("mousemove", handleInteraction);
+    window.addEventListener("keydown", handleInteraction);
+
+    return () => {
+      clearTimeout(titleTimeout);
+      clearTimeout(creatorTimeout);
+      window.removeEventListener("mousemove", handleInteraction);
+      window.removeEventListener("keydown", handleInteraction);
+    };
+  }, [currentVideoIndex]);
+
+  // Navigate to next video
+  const goToNextVideo = () => {
+    const nextIndex = (currentVideoIndex + 1) % videos.length;
+    setCurrentVideoIndex(nextIndex);
+    router.push(`/screening-room/${videos[nextIndex].id}`);
+  };
+
+  // Navigate to previous video
+  const goToPreviousVideo = () => {
+    const prevIndex = (currentVideoIndex - 1 + videos.length) % videos.length;
+    setCurrentVideoIndex(prevIndex);
+    router.push(`/screening-room/${videos[prevIndex].id}`);
+  };
+
+  return (
+    <div className="relative min-h-screen flex flex-col items-center justify-center bg-black text-white">
+      {/* Video Player */}
+      <video
+        controls
+        className="w-full max-w-3xl"
+        onEnded={goToNextVideo}
+      >
+        <source src={`/videos/${currentVideo.id}.mp4`} type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+
+      {/* Lower Third Title */}
+      {showTitle && (
+        <div className="absolute bottom-10 left-5 bg-black bg-opacity-60 px-4 py-2 rounded-md transition-opacity duration-1000">
+          <h2 className="text-xl font-bold">{currentVideo.title}</h2>
+        </div>
+      )}
+
+      {/* Creator Info at End */}
+      {showCreator && (
+        <div className="absolute top-10 right-5 bg-black bg-opacity-60 px-4 py-2 rounded-md animate-fadeIn">
+          <p>Uploaded by: <strong>{currentVideo.creator}</strong></p>
+        </div>
+      )}
+
+      {/* Engagement Buttons */}
+      <div className="absolute top-1/2 transform -translate-y-1/2 flex flex-col gap-3 right-5">
+        {/* Like Button */}
+        <button
+          onClick={() => setLikes(likes + 1)}
+          className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-md"
+        >
+          ❤️ {likes}
+        </button>
+
+        {/* Save Button */}
+        <button
+          onClick={() => setSaved(!saved)}
+          className={`px-4 py-2 rounded-md ${saved ? "bg-green-500" : "bg-gray-500"}`}
+        >
+          {saved ? "✅ Saved" : "💾 Save"}
+        </button>
+
+        {/* Discuss Button (Opens discussion in Community Board) */}
+        <button
+          onClick={() => router.push(`/community-board/${currentVideo.id}`)}
+          className="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-md"
+        >
+          💬 Discuss
+        </button>
+      </div>
+
+      {/* Navigation UI */}
+      <button
+        onClick={goToPreviousVideo}
+        className="absolute left-5 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 px-3 py-2 rounded-md"
+      >
+        ◀️
+      </button>
+
+      <button
+        onClick={goToNextVideo}
+        className="absolute right-5 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 px-3 py-2 rounded-md"
+      >
+        ▶️
+      </button>
+
+      {/* Suggested Videos */}
+      <div className="absolute bottom-5 flex gap-4">
+        {currentVideo.works.map((videoId) => {
+          const suggestedVideo = videos.find((v) => v.id === videoId);
+          return (
+            <button
+              key={videoId}
+              onClick={() => router.push(`/screening-room/${videoId}`)}
+              className="bg-gray-800 hover:bg-gray-600 p-2 rounded-md"
+            >
+              <img src={suggestedVideo?.thumbnail} alt={suggestedVideo?.title} className="w-24 h-14 rounded-md" />
+              <p className="text-xs mt-1">{suggestedVideo?.title}</p>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
