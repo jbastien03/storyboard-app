@@ -1,0 +1,8 @@
+export default function ScreeningRoom() {
+  return (
+    <div>
+      <h1>Screening Room</h1>
+      <p>Watch the latest videos here.</p>
+    </div>
+  );
+}
